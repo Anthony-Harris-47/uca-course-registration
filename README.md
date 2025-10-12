@@ -6,6 +6,7 @@ Preserve existing behaviors: students, courses, enrollments, waitlists, drops.
 
 ## Run
 ```bash
-mvn -q -DskipTests package
+mvn clean package 
 java -jar target/course-registration-0.1.0.jar
+java -jar target/course-registration-0.1.0.jar --demo
 ```
