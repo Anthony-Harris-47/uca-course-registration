@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CliApplication.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UCA Course Registration (Refactored with Tests)</a> &gt; <a href="index.source.html" class="el_package">edu.uca.registration.app</a> &gt; <span class="el_source">CliApplication.java</span></div><h1>CliApplication.java</h1><pre class="source lang-java linenums">package edu.uca.registration.app;
+
+import java.util.Collection;
+import java.util.Scanner;
+
+import edu.uca.registration.model.Course;
+import edu.uca.registration.model.Student;
+import edu.uca.registration.service.EnrollmentException;
+import edu.uca.registration.service.RegistrationService;
+import edu.uca.registration.service.RegistrationService.CourseEnrollmentInfo;
+import edu.uca.registration.service.RegistrationService.DropResult;
+import edu.uca.registration.service.RegistrationService.EnrollmentResult;
+
+/**
+ * Command-line interface for the course registration system.
+ * Handles user input/output and delegates business logic to RegistrationService.
+ */
+public class CliApplication {
+    private final RegistrationService service;
+    private final Scanner scanner;
+
+<span class="nc" id="L22">    public CliApplication(RegistrationService service) {</span>
+<span class="nc" id="L23">        this.service = service;</span>
+<span class="nc" id="L24">        this.scanner = new Scanner(System.in);</span>
+<span class="nc" id="L25">    }</span>
+
+    public void run() {
+<span class="nc" id="L28">        displayWelcome();</span>
+<span class="nc" id="L29">        menuLoop();</span>
+<span class="nc" id="L30">        displayGoodbye();</span>
+<span class="nc" id="L31">    }</span>
+
+    private void displayWelcome() {
+<span class="nc" id="L34">        println(&quot;=== UCA Course Registration System ===&quot;);</span>
+<span class="nc" id="L35">        println(&quot;Refactored with clean architecture and SOLID principles&quot;);</span>
+<span class="nc" id="L36">    }</span>
+
+    private void displayGoodbye() {
+<span class="nc" id="L39">        println(&quot;\nGoodbye!&quot;);</span>
+<span class="nc" id="L40">        scanner.close();</span>
+<span class="nc" id="L41">    }</span>
+
+    private void menuLoop() {
+        while (true) {
+<span class="nc" id="L45">            displayMenu();</span>
+<span class="nc" id="L46">            String choice = readInput(&quot;Choose: &quot;).trim();</span>
+            
+            try {
+<span class="nc bnc" id="L49" title="All 2 branches missed.">                if (!handleMenuChoice(choice)) {</span>
+<span class="nc" id="L50">                    break; // Exit</span>
+                }
+<span class="nc" id="L52">            } catch (Exception e) {</span>
+<span class="nc" id="L53">                println(&quot;Error: &quot; + e.getMessage());</span>
+<span class="nc" id="L54">            }</span>
+<span class="nc" id="L55">        }</span>
+<span class="nc" id="L56">    }</span>
+
+    private void displayMenu() {
+<span class="nc" id="L59">        println(&quot;\nMenu:&quot;);</span>
+<span class="nc" id="L60">        println(&quot;1) Add student&quot;);</span>
+<span class="nc" id="L61">        println(&quot;2) Add course&quot;);</span>
+<span class="nc" id="L62">        println(&quot;3) Enroll student in course&quot;);</span>
+<span class="nc" id="L63">        println(&quot;4) Drop student from course&quot;);</span>
+<span class="nc" id="L64">        println(&quot;5) List students&quot;);</span>
+<span class="nc" id="L65">        println(&quot;6) List courses&quot;);</span>
+<span class="nc" id="L66">        println(&quot;0) Exit&quot;);</span>
+<span class="nc" id="L67">    }</span>
+
+    private boolean handleMenuChoice(String choice) {
+<span class="nc bnc" id="L70" title="All 8 branches missed.">        switch (choice) {</span>
+            case &quot;1&quot;:
+<span class="nc" id="L72">                addStudentUI();</span>
+<span class="nc" id="L73">                return true;</span>
+            case &quot;2&quot;:
+<span class="nc" id="L75">                addCourseUI();</span>
+<span class="nc" id="L76">                return true;</span>
+            case &quot;3&quot;:
+<span class="nc" id="L78">                enrollUI();</span>
+<span class="nc" id="L79">                return true;</span>
+            case &quot;4&quot;:
+<span class="nc" id="L81">                dropUI();</span>
+<span class="nc" id="L82">                return true;</span>
+            case &quot;5&quot;:
+<span class="nc" id="L84">                listStudents();</span>
+<span class="nc" id="L85">                return true;</span>
+            case &quot;6&quot;:
+<span class="nc" id="L87">                listCourses();</span>
+<span class="nc" id="L88">                return true;</span>
+            case &quot;0&quot;:
+<span class="nc" id="L90">                return false;</span>
+            default:
+<span class="nc" id="L92">                println(&quot;Invalid choice. Please try again.&quot;);</span>
+<span class="nc" id="L93">                return true;</span>
+        }
+    }
+
+    private void addStudentUI() {
+        try {
+<span class="nc" id="L99">            String id = readInput(&quot;Banner ID: &quot;).trim();</span>
+<span class="nc" id="L100">            String name = readInput(&quot;Name: &quot;).trim();</span>
+<span class="nc" id="L101">            String email = readInput(&quot;Email: &quot;).trim();</span>
+            
+<span class="nc" id="L103">            service.addStudent(id, name, email);</span>
+<span class="nc" id="L104">            println(&quot;Student added successfully.&quot;);</span>
+<span class="nc" id="L105">        } catch (EnrollmentException e) {</span>
+<span class="nc" id="L106">            println(&quot;Error: &quot; + e.getMessage());</span>
+<span class="nc" id="L107">        }</span>
+<span class="nc" id="L108">    }</span>
+
+    private void addCourseUI() {
+        try {
+<span class="nc" id="L112">            String code = readInput(&quot;Course Code: &quot;).trim();</span>
+<span class="nc" id="L113">            String title = readInput(&quot;Title: &quot;).trim();</span>
+<span class="nc" id="L114">            String capStr = readInput(&quot;Capacity: &quot;).trim();</span>
+            
+<span class="nc" id="L116">            int capacity = Integer.parseInt(capStr);</span>
+<span class="nc" id="L117">            service.addCourse(code, title, capacity);</span>
+<span class="nc" id="L118">            println(&quot;Course added successfully.&quot;);</span>
+<span class="nc" id="L119">        } catch (NumberFormatException e) {</span>
+<span class="nc" id="L120">            println(&quot;Error: Capacity must be a valid number.&quot;);</span>
+<span class="nc" id="L121">        } catch (EnrollmentException e) {</span>
+<span class="nc" id="L122">            println(&quot;Error: &quot; + e.getMessage());</span>
+<span class="nc" id="L123">        }</span>
+<span class="nc" id="L124">    }</span>
+
+    private void enrollUI() {
+        try {
+<span class="nc" id="L128">            String studentId = readInput(&quot;Student ID: &quot;).trim();</span>
+<span class="nc" id="L129">            String courseCode = readInput(&quot;Course Code: &quot;).trim();</span>
+            
+<span class="nc" id="L131">            EnrollmentResult result = service.enrollStudent(studentId, courseCode);</span>
+<span class="nc" id="L132">            println(result.getMessage());</span>
+<span class="nc" id="L133">        } catch (EnrollmentException e) {</span>
+<span class="nc" id="L134">            println(&quot;Error: &quot; + e.getMessage());</span>
+<span class="nc" id="L135">        }</span>
+<span class="nc" id="L136">    }</span>
+
+    private void dropUI() {
+        try {
+<span class="nc" id="L140">            String studentId = readInput(&quot;Student ID: &quot;).trim();</span>
+<span class="nc" id="L141">            String courseCode = readInput(&quot;Course Code: &quot;).trim();</span>
+            
+<span class="nc" id="L143">            DropResult result = service.dropStudent(studentId, courseCode);</span>
+<span class="nc" id="L144">            println(result.getMessage());</span>
+<span class="nc" id="L145">        } catch (EnrollmentException e) {</span>
+<span class="nc" id="L146">            println(&quot;Error: &quot; + e.getMessage());</span>
+<span class="nc" id="L147">        }</span>
+<span class="nc" id="L148">    }</span>
+
+    private void listStudents() {
+<span class="nc" id="L151">        Collection&lt;Student&gt; students = service.getAllStudents();</span>
+<span class="nc" id="L152">        println(&quot;\nStudents:&quot;);</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        if (students.isEmpty()) {</span>
+<span class="nc" id="L154">            println(&quot;  (none)&quot;);</span>
+        } else {
+<span class="nc bnc" id="L156" title="All 2 branches missed.">            for (Student s : students) {</span>
+<span class="nc" id="L157">                println(&quot;  - &quot; + s);</span>
+<span class="nc" id="L158">            }</span>
+        }
+<span class="nc" id="L160">    }</span>
+
+    private void listCourses() {
+        try {
+<span class="nc" id="L164">            Collection&lt;Course&gt; courses = service.getAllCourses();</span>
+<span class="nc" id="L165">            println(&quot;\nCourses:&quot;);</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">            if (courses.isEmpty()) {</span>
+<span class="nc" id="L167">                println(&quot;  (none)&quot;);</span>
+            } else {
+<span class="nc bnc" id="L169" title="All 2 branches missed.">                for (Course c : courses) {</span>
+<span class="nc" id="L170">                    CourseEnrollmentInfo info = service.getCourseEnrollmentInfo(c.getCode());</span>
+<span class="nc" id="L171">                    println(&quot;  - &quot; + info.getDisplayString());</span>
+<span class="nc" id="L172">                }</span>
+            }
+<span class="nc" id="L174">        } catch (EnrollmentException e) {</span>
+<span class="nc" id="L175">            println(&quot;Error: &quot; + e.getMessage());</span>
+<span class="nc" id="L176">        }</span>
+<span class="nc" id="L177">    }</span>
+
+    private String readInput(String prompt) {
+<span class="nc" id="L180">        System.out.print(prompt);</span>
+<span class="nc" id="L181">        return scanner.nextLine();</span>
+    }
+
+    private void println(String message) {
+<span class="nc" id="L185">        System.out.println(message);</span>
+<span class="nc" id="L186">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

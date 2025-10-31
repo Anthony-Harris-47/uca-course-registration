@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Logger.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UCA Course Registration (Refactored with Tests)</a> &gt; <a href="index.source.html" class="el_package">edu.uca.registration.util</a> &gt; <span class="el_source">Logger.java</span></div><h1>Logger.java</h1><pre class="source lang-java linenums">package edu.uca.registration.util;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+
+//Simple logging utility for the application.
+
+public class Logger {
+<span class="fc" id="L10">    private static final DateTimeFormatter formatter = </span>
+<span class="fc" id="L11">        DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd HH:mm:ss&quot;);</span>
+    
+    private final String context;
+    private final LogLevel minLevel;
+
+<span class="fc" id="L16">    public enum LogLevel {</span>
+<span class="fc" id="L17">        DEBUG(0), INFO(1), WARN(2), ERROR(3);</span>
+        
+        private final int priority;
+<span class="fc" id="L20">        LogLevel(int priority) { this.priority = priority; }</span>
+        
+        public boolean shouldLog(LogLevel minLevel) {
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">            return this.priority &gt;= minLevel.priority;</span>
+        }
+    }
+
+    public Logger(String context) {
+<span class="nc" id="L28">        this(context, LogLevel.INFO);</span>
+<span class="nc" id="L29">    }</span>
+
+<span class="fc" id="L31">    public Logger(String context, LogLevel minLevel) {</span>
+<span class="fc" id="L32">        this.context = context;</span>
+<span class="fc" id="L33">        this.minLevel = minLevel;</span>
+<span class="fc" id="L34">    }</span>
+
+    public void debug(String message) {
+<span class="nc" id="L37">        log(LogLevel.DEBUG, message);</span>
+<span class="nc" id="L38">    }</span>
+
+    public void info(String message) {
+<span class="fc" id="L41">        log(LogLevel.INFO, message);</span>
+<span class="fc" id="L42">    }</span>
+
+    public void warn(String message) {
+<span class="nc" id="L45">        log(LogLevel.WARN, message);</span>
+<span class="nc" id="L46">    }</span>
+
+    public void error(String message) {
+<span class="nc" id="L49">        log(LogLevel.ERROR, message);</span>
+<span class="nc" id="L50">    }</span>
+
+    private void log(LogLevel level, String message) {
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        if (level.shouldLog(minLevel)) {</span>
+<span class="nc" id="L54">            String timestamp = LocalDateTime.now().format(formatter);</span>
+<span class="nc" id="L55">            System.err.println(String.format(&quot;[%s] %s [%s] %s&quot;, </span>
+                timestamp, level, context, message));
+        }
+<span class="fc" id="L58">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

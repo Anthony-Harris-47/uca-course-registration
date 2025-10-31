@@ -1,0 +1,18 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+UCA Course Registration (Refactored with Tests),edu.uca.registration.service,RegistrationService.EnrollmentResult,0,26,0,2,0,7,0,6,0,5
+UCA Course Registration (Refactored with Tests),edu.uca.registration.service,RegistrationService.CourseEnrollmentInfo,0,57,0,0,0,11,0,5,0,5
+UCA Course Registration (Refactored with Tests),edu.uca.registration.service,RegistrationService,12,375,2,22,2,79,2,23,0,13
+UCA Course Registration (Refactored with Tests),edu.uca.registration.service,RegistrationService.DropResult,0,35,0,0,0,9,0,6,0,6
+UCA Course Registration (Refactored with Tests),edu.uca.registration.service,EnrollmentException,0,9,0,0,0,4,0,2,0,2
+UCA Course Registration (Refactored with Tests),edu.uca.registration.util,Logger,47,24,1,1,10,10,5,4,4,4
+UCA Course Registration (Refactored with Tests),edu.uca.registration.util,Config,135,0,10,0,38,0,15,0,10,0
+UCA Course Registration (Refactored with Tests),edu.uca.registration.util,Logger.LogLevel,2,46,1,1,0,4,1,3,0,3
+UCA Course Registration (Refactored with Tests),edu.uca.registration.model,Enrollment.EnrollmentStatus,0,15,0,0,0,3,0,1,0,1
+UCA Course Registration (Refactored with Tests),edu.uca.registration.model,Enrollment,87,37,19,5,12,11,17,4,5,4
+UCA Course Registration (Refactored with Tests),edu.uca.registration.model,Course,2,92,2,16,0,20,2,14,0,7
+UCA Course Registration (Refactored with Tests),edu.uca.registration.model,Student,4,93,5,13,0,20,5,11,0,7
+UCA Course Registration (Refactored with Tests),edu.uca.registration.app,CliApplication,332,0,18,0,109,0,27,0,15,0
+UCA Course Registration (Refactored with Tests),edu.uca.registration.repository.impl,CsvStudentRepository,218,0,12,0,49,0,15,0,9,0
+UCA Course Registration (Refactored with Tests),edu.uca.registration.repository.impl,CsvCourseRepository,222,0,12,0,50,0,15,0,9,0
+UCA Course Registration (Refactored with Tests),edu.uca.registration.repository.impl,CsvEnrollmentRepository,314,0,26,0,64,0,29,0,16,0
+UCA Course Registration (Refactored with Tests),edu.uca.registration,Main,123,0,6,0,30,0,6,0,3,0

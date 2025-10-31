@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Main.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UCA Course Registration (Refactored with Tests)</a> &gt; <a href="index.source.html" class="el_package">edu.uca.registration</a> &gt; <span class="el_source">Main.java</span></div><h1>Main.java</h1><pre class="source lang-java linenums">package edu.uca.registration;
+
+import edu.uca.registration.app.CliApplication;
+import edu.uca.registration.repository.CourseRepository;
+import edu.uca.registration.repository.EnrollmentRepository;
+import edu.uca.registration.repository.StudentRepository;
+import edu.uca.registration.repository.impl.CsvCourseRepository;
+import edu.uca.registration.repository.impl.CsvEnrollmentRepository;
+import edu.uca.registration.repository.impl.CsvStudentRepository;
+import edu.uca.registration.service.EnrollmentException;
+import edu.uca.registration.service.RegistrationService;
+import edu.uca.registration.util.Config;
+import edu.uca.registration.util.Logger;
+
+/**
+ * Main entry point for the UCA Course Registration System.
+ * Handles dependency injection and application initialization.
+ */
+<span class="nc" id="L19">public class Main {</span>
+    
+    public static void main(String[] args) {
+        // Load configuration
+<span class="nc" id="L23">        Config config = new Config();</span>
+<span class="nc" id="L24">        Logger logger = new Logger(&quot;Main&quot;, config.getLogLevel());</span>
+        
+        // Check for demo mode
+<span class="nc bnc" id="L27" title="All 4 branches missed.">        boolean demoMode = args.length &gt; 0 &amp;&amp; &quot;--demo&quot;.equalsIgnoreCase(args[0]);</span>
+        
+        // Initialize repositories
+<span class="nc" id="L30">        StudentRepository studentRepo = new CsvStudentRepository(</span>
+<span class="nc" id="L31">            config.getStudentsFile(), </span>
+<span class="nc" id="L32">            new Logger(&quot;StudentRepo&quot;, config.getLogLevel())</span>
+        );
+        
+<span class="nc" id="L35">        CourseRepository courseRepo = new CsvCourseRepository(</span>
+<span class="nc" id="L36">            config.getCoursesFile(),</span>
+<span class="nc" id="L37">            new Logger(&quot;CourseRepo&quot;, config.getLogLevel())</span>
+        );
+        
+<span class="nc" id="L40">        EnrollmentRepository enrollmentRepo = new CsvEnrollmentRepository(</span>
+<span class="nc" id="L41">            config.getEnrollmentsFile(),</span>
+<span class="nc" id="L42">            new Logger(&quot;EnrollmentRepo&quot;, config.getLogLevel())</span>
+        );
+        
+        // Initialize service
+<span class="nc" id="L46">        RegistrationService service = new RegistrationService(</span>
+            studentRepo,
+            courseRepo,
+            enrollmentRepo,
+<span class="nc" id="L50">            new Logger(&quot;RegistrationService&quot;, config.getLogLevel())</span>
+        );
+        
+        // Seed demo data if requested
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        if (demoMode) {</span>
+<span class="nc" id="L55">            seedDemoData(service, logger);</span>
+        }
+        
+        // Start CLI application
+<span class="nc" id="L59">        CliApplication app = new CliApplication(service);</span>
+<span class="nc" id="L60">        app.run();</span>
+<span class="nc" id="L61">    }</span>
+    
+    private static void seedDemoData(RegistrationService service, Logger logger) {
+        try {
+<span class="nc" id="L65">            logger.info(&quot;Seeding demo data...&quot;);</span>
+            
+            // Add demo students
+<span class="nc" id="L68">            service.addStudent(&quot;B001&quot;, &quot;Alice&quot;, &quot;alice@uca.edu&quot;);</span>
+<span class="nc" id="L69">            service.addStudent(&quot;B002&quot;, &quot;Brian&quot;, &quot;brian@uca.edu&quot;);</span>
+            
+            // Add demo courses
+<span class="nc" id="L72">            service.addCourse(&quot;CSCI4490&quot;, &quot;Software Engineering&quot;, 2);</span>
+<span class="nc" id="L73">            service.addCourse(&quot;MATH1496&quot;, &quot;Calculus I&quot;, 50);</span>
+            
+<span class="nc" id="L75">            logger.info(&quot;Demo data seeded successfully&quot;);</span>
+<span class="nc" id="L76">        } catch (EnrollmentException e) {</span>
+<span class="nc" id="L77">            logger.error(&quot;Failed to seed demo data: &quot; + e.getMessage());</span>
+<span class="nc" id="L78">        }</span>
+<span class="nc" id="L79">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

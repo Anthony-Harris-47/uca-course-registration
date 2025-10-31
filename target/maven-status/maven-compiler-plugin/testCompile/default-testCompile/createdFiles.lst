@@ -1,0 +1,11 @@
+edu\uca\registration\system\SystemTest$InMemoryStudentRepository.class
+edu\uca\registration\model\CourseTest.class
+edu\uca\registration\system\SystemTest$InMemoryCourseRepository.class
+edu\uca\registration\performance\PerformanceTest$InMemoryEnrollmentRepository.class
+edu\uca\registration\system\SystemTest.class
+edu\uca\registration\performance\PerformanceTest$InMemoryCourseRepository.class
+edu\uca\registration\system\SystemTest$InMemoryEnrollmentRepository.class
+edu\uca\registration\model\StudentTest.class
+edu\uca\registration\service\RegistrationServiceTest.class
+edu\uca\registration\performance\PerformanceTest$InMemoryStudentRepository.class
+edu\uca\registration\performance\PerformanceTest.class

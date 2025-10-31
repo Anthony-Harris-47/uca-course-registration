@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CsvStudentRepository.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UCA Course Registration (Refactored with Tests)</a> &gt; <a href="index.source.html" class="el_package">edu.uca.registration.repository.impl</a> &gt; <span class="el_source">CsvStudentRepository.java</span></div><h1>CsvStudentRepository.java</h1><pre class="source lang-java linenums">package edu.uca.registration.repository.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import edu.uca.registration.model.Student;
+import edu.uca.registration.repository.StudentRepository;
+import edu.uca.registration.util.Logger;
+
+/**
+ * CSV based implementation of StudentRepository.
+ */
+public class CsvStudentRepository implements StudentRepository {
+    private final String filePath;
+    private final Map&lt;String, Student&gt; students;
+    private final Logger logger;
+
+<span class="nc" id="L27">    public CsvStudentRepository(String filePath, Logger logger) {</span>
+<span class="nc" id="L28">        this.filePath = filePath;</span>
+<span class="nc" id="L29">        this.students = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L30">        this.logger = logger;</span>
+<span class="nc" id="L31">        loadFromFile();</span>
+<span class="nc" id="L32">    }</span>
+
+    @Override
+    public void save(Student student) {
+<span class="nc" id="L36">        students.put(student.getId(), student);</span>
+<span class="nc" id="L37">        flush();</span>
+<span class="nc" id="L38">    }</span>
+
+    @Override
+    public Optional&lt;Student&gt; findById(String id) {
+<span class="nc" id="L42">        return Optional.ofNullable(students.get(id));</span>
+    }
+
+    @Override
+    public boolean exists(String id) {
+<span class="nc" id="L47">        return students.containsKey(id);</span>
+    }
+
+    @Override
+    public Collection&lt;Student&gt; findAll() {
+<span class="nc" id="L52">        return new ArrayList&lt;&gt;(students.values());</span>
+    }
+
+    @Override
+    public boolean delete(String id) {
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        boolean existed = students.remove(id) != null;</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (existed) {</span>
+<span class="nc" id="L59">            flush();</span>
+        }
+<span class="nc" id="L61">        return existed;</span>
+    }
+
+    @Override
+    public int count() {
+<span class="nc" id="L66">        return students.size();</span>
+    }
+
+    @Override
+    public void flush() {
+<span class="nc" id="L71">        try (PrintWriter pw = new PrintWriter(new FileWriter(filePath))) {</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">            for (Student s : students.values()) {</span>
+<span class="nc" id="L73">                pw.println(String.format(&quot;%s,%s,%s&quot;, </span>
+<span class="nc" id="L74">                    s.getId(), s.getName(), s.getEmail()));</span>
+<span class="nc" id="L75">            }</span>
+<span class="nc" id="L76">            logger.debug(&quot;Saved &quot; + students.size() + &quot; students to &quot; + filePath);</span>
+<span class="nc" id="L77">        } catch (IOException e) {</span>
+<span class="nc" id="L78">            logger.error(&quot;Failed to save students: &quot; + e.getMessage());</span>
+<span class="nc" id="L79">            throw new RuntimeException(&quot;Failed to persist students&quot;, e);</span>
+<span class="nc" id="L80">        }</span>
+<span class="nc" id="L81">    }</span>
+
+    private void loadFromFile() {
+<span class="nc" id="L84">        File file = new File(filePath);</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (!file.exists()) {</span>
+<span class="nc" id="L86">            logger.info(&quot;Student file not found, starting with empty repository&quot;);</span>
+<span class="nc" id="L87">            return;</span>
+        }
+
+<span class="nc" id="L90">        try (BufferedReader br = new BufferedReader(new FileReader(file))) {</span>
+            String line;
+<span class="nc" id="L92">            int lineNum = 0;</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">            while ((line = br.readLine()) != null) {</span>
+<span class="nc" id="L94">                lineNum++;</span>
+<span class="nc" id="L95">                String[] parts = line.split(&quot;,&quot;, -1);</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">                if (parts.length &gt;= 3) {</span>
+                    try {
+<span class="nc" id="L98">                        Student student = new Student(parts[0], parts[1], parts[2]);</span>
+<span class="nc" id="L99">                        students.put(student.getId(), student);</span>
+<span class="nc" id="L100">                    } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L101">                        logger.warn(&quot;Skipping invalid student at line &quot; + lineNum + &quot;: &quot; + e.getMessage());</span>
+<span class="nc" id="L102">                    }</span>
+                }
+<span class="nc" id="L104">            }</span>
+<span class="nc" id="L105">            logger.info(&quot;Loaded &quot; + students.size() + &quot; students from &quot; + filePath);</span>
+<span class="nc" id="L106">        } catch (IOException e) {</span>
+<span class="nc" id="L107">            logger.error(&quot;Failed to load students: &quot; + e.getMessage());</span>
+<span class="nc" id="L108">        }</span>
+<span class="nc" id="L109">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

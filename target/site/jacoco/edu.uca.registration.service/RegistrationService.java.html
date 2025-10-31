@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegistrationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UCA Course Registration (Refactored with Tests)</a> &gt; <a href="index.source.html" class="el_package">edu.uca.registration.service</a> &gt; <span class="el_source">RegistrationService.java</span></div><h1>RegistrationService.java</h1><pre class="source lang-java linenums">package edu.uca.registration.service;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
+import edu.uca.registration.model.Course;
+import edu.uca.registration.model.Enrollment;
+import edu.uca.registration.model.Enrollment.EnrollmentStatus;
+import edu.uca.registration.model.Student;
+import edu.uca.registration.repository.CourseRepository;
+import edu.uca.registration.repository.EnrollmentRepository;
+import edu.uca.registration.repository.StudentRepository;
+import edu.uca.registration.util.Logger;
+
+/**
+ * Service layer containing all business logic for course registration.
+ * Enforces capacity limits, waitlist management, and FIFO promotion.
+ */
+public class RegistrationService {
+    private final StudentRepository studentRepo;
+    private final CourseRepository courseRepo;
+    private final EnrollmentRepository enrollmentRepo;
+    private final Logger logger;
+
+    public RegistrationService(StudentRepository studentRepo, 
+                              CourseRepository courseRepo,
+                              EnrollmentRepository enrollmentRepo,
+<span class="fc" id="L29">                              Logger logger) {</span>
+<span class="fc" id="L30">        this.studentRepo = studentRepo;</span>
+<span class="fc" id="L31">        this.courseRepo = courseRepo;</span>
+<span class="fc" id="L32">        this.enrollmentRepo = enrollmentRepo;</span>
+<span class="fc" id="L33">        this.logger = logger;</span>
+<span class="fc" id="L34">    }</span>
+
+    //Student Operations
+    
+    public void addStudent(String id, String name, String email) throws EnrollmentException {
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (studentRepo.exists(id)) {</span>
+<span class="fc" id="L40">            throw new EnrollmentException(&quot;Student with ID &quot; + id + &quot; already exists&quot;);</span>
+        }
+        
+        try {
+<span class="fc" id="L44">            Student student = new Student(id, name, email);</span>
+<span class="fc" id="L45">            studentRepo.save(student);</span>
+<span class="fc" id="L46">            logger.info(&quot;ADD_STUDENT &quot; + id);</span>
+<span class="fc" id="L47">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L48">            throw new EnrollmentException(&quot;Invalid student data: &quot; + e.getMessage(), e);</span>
+<span class="fc" id="L49">        }</span>
+<span class="fc" id="L50">    }</span>
+
+    public Optional&lt;Student&gt; findStudent(String id) {
+<span class="fc" id="L53">        return studentRepo.findById(id);</span>
+    }
+
+    public Collection&lt;Student&gt; getAllStudents() {
+<span class="fc" id="L57">        return studentRepo.findAll();</span>
+    }
+
+    //Course Operations
+    
+    public void addCourse(String code, String title, int capacity) throws EnrollmentException {
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (courseRepo.exists(code)) {</span>
+<span class="fc" id="L64">            throw new EnrollmentException(&quot;Course with code &quot; + code + &quot; already exists&quot;);</span>
+        }
+        
+        try {
+<span class="fc" id="L68">            Course course = new Course(code, title, capacity);</span>
+<span class="fc" id="L69">            courseRepo.save(course);</span>
+<span class="fc" id="L70">            logger.info(&quot;ADD_COURSE &quot; + code);</span>
+<span class="fc" id="L71">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L72">            throw new EnrollmentException(&quot;Invalid course data: &quot; + e.getMessage(), e);</span>
+<span class="fc" id="L73">        }</span>
+<span class="fc" id="L74">    }</span>
+
+    public Optional&lt;Course&gt; findCourse(String code) {
+<span class="fc" id="L77">        return courseRepo.findByCode(code);</span>
+    }
+
+    public Collection&lt;Course&gt; getAllCourses() {
+<span class="fc" id="L81">        return courseRepo.findAll();</span>
+    }
+
+    //Enrollment Operations
+    
+    public EnrollmentResult enrollStudent(String studentId, String courseCode) throws EnrollmentException {
+        
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (!studentRepo.exists(studentId)) {</span>
+<span class="fc" id="L89">            throw new EnrollmentException(&quot;Student &quot; + studentId + &quot; not found&quot;);</span>
+        }
+
+<span class="fc" id="L92">        Optional&lt;Course&gt; courseOpt = courseRepo.findByCode(courseCode);</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (courseOpt.isEmpty()) {</span>
+<span class="fc" id="L94">            throw new EnrollmentException(&quot;Course &quot; + courseCode + &quot; not found&quot;);</span>
+        }
+<span class="fc" id="L96">        Course course = courseOpt.get();</span>
+
+        // Check if already enrolled
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        if (enrollmentRepo.exists(studentId, courseCode)) {</span>
+<span class="fc" id="L100">            List&lt;Enrollment&gt; existing = enrollmentRepo.findByCourseAndStatus(courseCode, EnrollmentStatus.ENROLLED);</span>
+<span class="fc" id="L101">            boolean enrolled = existing.stream().anyMatch(e -&gt; e.getStudentId().equals(studentId));</span>
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">            if (enrolled) {</span>
+<span class="fc" id="L103">                throw new EnrollmentException(&quot;Student already enrolled in &quot; + courseCode);</span>
+            } else {
+<span class="nc" id="L105">                throw new EnrollmentException(&quot;Student already on waitlist for &quot; + courseCode);</span>
+            }
+        }
+
+        // Check capacity
+<span class="fc" id="L110">        int enrolledCount = enrollmentRepo.countByCourseAndStatus(courseCode, EnrollmentStatus.ENROLLED);</span>
+        
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (enrolledCount &gt;= course.getCapacity()) {</span>
+            // Add to waitlist
+<span class="fc" id="L114">            Enrollment enrollment = new Enrollment(studentId, courseCode, EnrollmentStatus.WAITLISTED);</span>
+<span class="fc" id="L115">            enrollmentRepo.save(enrollment);</span>
+<span class="fc" id="L116">            logger.info(&quot;WAITLIST &quot; + studentId + &quot; -&gt; &quot; + courseCode);</span>
+<span class="fc" id="L117">            return EnrollmentResult.waitlisted();</span>
+        } else {
+            // Enroll directly
+<span class="fc" id="L120">            Enrollment enrollment = new Enrollment(studentId, courseCode, EnrollmentStatus.ENROLLED);</span>
+<span class="fc" id="L121">            enrollmentRepo.save(enrollment);</span>
+<span class="fc" id="L122">            logger.info(&quot;ENROLL &quot; + studentId + &quot; -&gt; &quot; + courseCode);</span>
+<span class="fc" id="L123">            return EnrollmentResult.enrolled();</span>
+        }
+    }
+
+    public DropResult dropStudent(String studentId, String courseCode) throws EnrollmentException {
+        // Validate course exists
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">        if (!courseRepo.findByCode(courseCode).isPresent()) {</span>
+<span class="nc" id="L130">            throw new EnrollmentException(&quot;Course &quot; + courseCode + &quot; not found&quot;);</span>
+        }
+
+        // Check if enrolled
+<span class="fc" id="L134">        List&lt;Enrollment&gt; enrolled = enrollmentRepo.findByCourseAndStatus(courseCode, EnrollmentStatus.ENROLLED);</span>
+<span class="fc" id="L135">        boolean wasEnrolled = enrolled.stream().anyMatch(e -&gt; e.getStudentId().equals(studentId));</span>
+
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        if (wasEnrolled) {</span>
+<span class="fc" id="L138">            enrollmentRepo.delete(studentId, courseCode);</span>
+<span class="fc" id="L139">            logger.info(&quot;DROP &quot; + studentId + &quot; from &quot; + courseCode);</span>
+
+            // Promote first waitlisted student
+<span class="fc" id="L142">            List&lt;Enrollment&gt; waitlist = enrollmentRepo.findByCourseAndStatus(courseCode, EnrollmentStatus.WAITLISTED);</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">            if (!waitlist.isEmpty()) {</span>
+<span class="fc" id="L144">                Enrollment firstWaitlisted = waitlist.get(0);</span>
+<span class="fc" id="L145">                String promotedId = firstWaitlisted.getStudentId();</span>
+                
+<span class="fc" id="L147">                enrollmentRepo.delete(promotedId, courseCode);</span>
+<span class="fc" id="L148">                Enrollment promoted = new Enrollment(promotedId, courseCode, EnrollmentStatus.ENROLLED);</span>
+<span class="fc" id="L149">                enrollmentRepo.save(promoted);</span>
+                
+<span class="fc" id="L151">                logger.info(&quot;PROMOTE &quot; + promotedId + &quot; -&gt; &quot; + courseCode);</span>
+<span class="fc" id="L152">                return DropResult.droppedWithPromotion(promotedId);</span>
+            }
+<span class="fc" id="L154">            return DropResult.dropped();</span>
+        }
+
+        // Check if on waitlist
+<span class="fc" id="L158">        List&lt;Enrollment&gt; waitlist = enrollmentRepo.findByCourseAndStatus(courseCode, EnrollmentStatus.WAITLISTED);</span>
+<span class="fc" id="L159">        boolean wasWaitlisted = waitlist.stream().anyMatch(e -&gt; e.getStudentId().equals(studentId));</span>
+
+<span class="fc bfc" id="L161" title="All 2 branches covered.">        if (wasWaitlisted) {</span>
+<span class="fc" id="L162">            enrollmentRepo.delete(studentId, courseCode);</span>
+<span class="fc" id="L163">            logger.info(&quot;WAITLIST_REMOVE &quot; + studentId + &quot; &quot; + courseCode);</span>
+<span class="fc" id="L164">            return DropResult.removedFromWaitlist();</span>
+        }
+
+<span class="fc" id="L167">        throw new EnrollmentException(&quot;Student not enrolled or waitlisted in &quot; + courseCode);</span>
+    }
+
+    //Query Operations
+    
+    public CourseEnrollmentInfo getCourseEnrollmentInfo(String courseCode) throws EnrollmentException {
+<span class="fc" id="L173">        Optional&lt;Course&gt; courseOpt = courseRepo.findByCode(courseCode);</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        if (courseOpt.isEmpty()) {</span>
+<span class="fc" id="L175">            throw new EnrollmentException(&quot;Course &quot; + courseCode + &quot; not found&quot;);</span>
+        }
+        
+<span class="fc" id="L178">        Course course = courseOpt.get();</span>
+<span class="fc" id="L179">        int enrolled = enrollmentRepo.countByCourseAndStatus(courseCode, EnrollmentStatus.ENROLLED);</span>
+<span class="fc" id="L180">        int waitlisted = enrollmentRepo.countByCourseAndStatus(courseCode, EnrollmentStatus.WAITLISTED);</span>
+        
+<span class="fc" id="L182">        return new CourseEnrollmentInfo(course, enrolled, waitlisted);</span>
+    }
+
+    //Result Classes
+    
+    public static class EnrollmentResult {
+        private final boolean waitlisted;
+
+<span class="fc" id="L190">        private EnrollmentResult(boolean waitlisted) {</span>
+<span class="fc" id="L191">            this.waitlisted = waitlisted;</span>
+<span class="fc" id="L192">        }</span>
+
+        public static EnrollmentResult enrolled() {
+<span class="fc" id="L195">            return new EnrollmentResult(false);</span>
+        }
+
+        public static EnrollmentResult waitlisted() {
+<span class="fc" id="L199">            return new EnrollmentResult(true);</span>
+        }
+
+        public boolean isWaitlisted() {
+<span class="fc" id="L203">            return waitlisted;</span>
+        }
+
+        public String getMessage() {
+<span class="fc bfc" id="L207" title="All 2 branches covered.">            return waitlisted ? &quot;Course full. Added to WAITLIST.&quot; : &quot;Enrolled.&quot;;</span>
+        }
+    }
+
+    public static class DropResult {
+        private final String message;
+        private final String promotedStudentId;
+
+<span class="fc" id="L215">        private DropResult(String message, String promotedStudentId) {</span>
+<span class="fc" id="L216">            this.message = message;</span>
+<span class="fc" id="L217">            this.promotedStudentId = promotedStudentId;</span>
+<span class="fc" id="L218">        }</span>
+
+        public static DropResult dropped() {
+<span class="fc" id="L221">            return new DropResult(&quot;Dropped.&quot;, null);</span>
+        }
+
+        public static DropResult droppedWithPromotion(String promotedId) {
+<span class="fc" id="L225">            return new DropResult(&quot;Dropped. Promoted &quot; + promotedId + &quot; from waitlist.&quot;, promotedId);</span>
+        }
+
+        public static DropResult removedFromWaitlist() {
+<span class="fc" id="L229">            return new DropResult(&quot;Removed from waitlist.&quot;, null);</span>
+        }
+
+        public String getMessage() {
+<span class="fc" id="L233">            return message;</span>
+        }
+
+        public Optional&lt;String&gt; getPromotedStudentId() {
+<span class="fc" id="L237">            return Optional.ofNullable(promotedStudentId);</span>
+        }
+    }
+
+    public static class CourseEnrollmentInfo {
+        private final Course course;
+        private final int enrolledCount;
+        private final int waitlistCount;
+
+<span class="fc" id="L246">        public CourseEnrollmentInfo(Course course, int enrolledCount, int waitlistCount) {</span>
+<span class="fc" id="L247">            this.course = course;</span>
+<span class="fc" id="L248">            this.enrolledCount = enrolledCount;</span>
+<span class="fc" id="L249">            this.waitlistCount = waitlistCount;</span>
+<span class="fc" id="L250">        }</span>
+
+        public Course getCourse() {
+<span class="fc" id="L253">            return course;</span>
+        }
+
+        public int getEnrolledCount() {
+<span class="fc" id="L257">            return enrolledCount;</span>
+        }
+
+        public int getWaitlistCount() {
+<span class="fc" id="L261">            return waitlistCount;</span>
+        }
+
+        public String getDisplayString() {
+<span class="fc" id="L265">            return String.format(&quot;%s %s cap=%d enrolled=%d wait=%d&quot;,</span>
+<span class="fc" id="L266">                    course.getCode(), course.getTitle(), course.getCapacity(),</span>
+<span class="fc" id="L267">                    enrolledCount, waitlistCount);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

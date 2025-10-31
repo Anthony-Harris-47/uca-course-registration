@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CsvEnrollmentRepository.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UCA Course Registration (Refactored with Tests)</a> &gt; <a href="index.source.html" class="el_package">edu.uca.registration.repository.impl</a> &gt; <span class="el_source">CsvEnrollmentRepository.java</span></div><h1>CsvEnrollmentRepository.java</h1><pre class="source lang-java linenums">package edu.uca.registration.repository.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import edu.uca.registration.model.Enrollment;
+import edu.uca.registration.model.Enrollment.EnrollmentStatus;
+import edu.uca.registration.repository.EnrollmentRepository;
+import edu.uca.registration.util.Logger;
+
+/**
+ * CSV based implementation of EnrollmentRepository.
+ * Maintains FIFO ordering for waitlists.
+ */
+public class CsvEnrollmentRepository implements EnrollmentRepository {
+    private final String filePath;
+    private final List&lt;Enrollment&gt; enrollments;
+    private final Logger logger;
+
+<span class="nc" id="L27">    public CsvEnrollmentRepository(String filePath, Logger logger) {</span>
+<span class="nc" id="L28">        this.filePath = filePath;</span>
+<span class="nc" id="L29">        this.enrollments = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L30">        this.logger = logger;</span>
+<span class="nc" id="L31">        loadFromFile();</span>
+<span class="nc" id="L32">    }</span>
+
+    @Override
+    public void save(Enrollment enrollment) {
+        // Remove existing enrollment for same student course pair
+<span class="nc" id="L37">        delete(enrollment.getStudentId(), enrollment.getCourseCode());</span>
+<span class="nc" id="L38">        enrollments.add(enrollment);</span>
+<span class="nc" id="L39">        flush();</span>
+<span class="nc" id="L40">    }</span>
+
+    @Override
+    public List&lt;Enrollment&gt; findByCourseCode(String courseCode) {
+<span class="nc" id="L44">        return enrollments.stream()</span>
+<span class="nc" id="L45">                .filter(e -&gt; e.getCourseCode().equals(courseCode))</span>
+<span class="nc" id="L46">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public List&lt;Enrollment&gt; findByStudentId(String studentId) {
+<span class="nc" id="L51">        return enrollments.stream()</span>
+<span class="nc" id="L52">                .filter(e -&gt; e.getStudentId().equals(studentId))</span>
+<span class="nc" id="L53">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public List&lt;Enrollment&gt; findByCourseAndStatus(String courseCode, EnrollmentStatus status) {
+<span class="nc" id="L58">        return enrollments.stream()</span>
+<span class="nc bnc" id="L59" title="All 4 branches missed.">                .filter(e -&gt; e.getCourseCode().equals(courseCode) &amp;&amp; e.getStatus() == status)</span>
+<span class="nc" id="L60">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public boolean exists(String studentId, String courseCode) {
+<span class="nc" id="L65">        return enrollments.stream()</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">                .anyMatch(e -&gt; e.getStudentId().equals(studentId) </span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">                            &amp;&amp; e.getCourseCode().equals(courseCode));</span>
+    }
+
+    @Override
+    public boolean delete(String studentId, String courseCode) {
+<span class="nc" id="L72">        boolean removed = enrollments.removeIf(e -&gt; </span>
+<span class="nc bnc" id="L73" title="All 4 branches missed.">            e.getStudentId().equals(studentId) &amp;&amp; e.getCourseCode().equals(courseCode));</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (removed) {</span>
+<span class="nc" id="L75">            flush();</span>
+        }
+<span class="nc" id="L77">        return removed;</span>
+    }
+
+    @Override
+    public int countByCourseAndStatus(String courseCode, EnrollmentStatus status) {
+<span class="nc" id="L82">        return (int) enrollments.stream()</span>
+<span class="nc bnc" id="L83" title="All 4 branches missed.">                .filter(e -&gt; e.getCourseCode().equals(courseCode) &amp;&amp; e.getStatus() == status)</span>
+<span class="nc" id="L84">                .count();</span>
+    }
+
+    @Override
+    public void flush() {
+<span class="nc" id="L89">        try (PrintWriter pw = new PrintWriter(new FileWriter(filePath))) {</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">            for (Enrollment e : enrollments) {</span>
+<span class="nc" id="L91">                pw.println(String.format(&quot;%s|%s|%s&quot;, </span>
+<span class="nc" id="L92">                    e.getCourseCode(), e.getStudentId(), e.getStatus()));</span>
+<span class="nc" id="L93">            }</span>
+<span class="nc" id="L94">            logger.debug(&quot;Saved &quot; + enrollments.size() + &quot; enrollments to &quot; + filePath);</span>
+<span class="nc" id="L95">        } catch (IOException ex) {</span>
+<span class="nc" id="L96">            logger.error(&quot;Failed to save enrollments: &quot; + ex.getMessage());</span>
+<span class="nc" id="L97">            throw new RuntimeException(&quot;Failed to persist enrollments&quot;, ex);</span>
+<span class="nc" id="L98">        }</span>
+<span class="nc" id="L99">    }</span>
+
+    private void loadFromFile() {
+<span class="nc" id="L102">        File file = new File(filePath);</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (!file.exists()) {</span>
+<span class="nc" id="L104">            logger.info(&quot;Enrollment file not found, starting with empty repository&quot;);</span>
+<span class="nc" id="L105">            return;</span>
+        }
+
+<span class="nc" id="L108">        try (BufferedReader br = new BufferedReader(new FileReader(file))) {</span>
+            String line;
+<span class="nc" id="L110">            int lineNum = 0;</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">            while ((line = br.readLine()) != null) {</span>
+<span class="nc" id="L112">                lineNum++;</span>
+<span class="nc" id="L113">                String[] parts = line.split(&quot;\\|&quot;, -1);</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">                if (parts.length &gt;= 3) {</span>
+                    try {
+<span class="nc" id="L116">                        String courseCode = parts[0];</span>
+<span class="nc" id="L117">                        String studentId = parts[1];</span>
+<span class="nc" id="L118">                        EnrollmentStatus status = EnrollmentStatus.valueOf(parts[2].toUpperCase());</span>
+<span class="nc" id="L119">                        enrollments.add(new Enrollment(studentId, courseCode, status));</span>
+<span class="nc" id="L120">                    } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L121">                        logger.warn(&quot;Skipping invalid enrollment at line &quot; + lineNum + &quot;: &quot; + e.getMessage());</span>
+<span class="nc" id="L122">                    }</span>
+                }
+<span class="nc" id="L124">            }</span>
+<span class="nc" id="L125">            logger.info(&quot;Loaded &quot; + enrollments.size() + &quot; enrollments from &quot; + filePath);</span>
+<span class="nc" id="L126">        } catch (IOException e) {</span>
+<span class="nc" id="L127">            logger.error(&quot;Failed to load enrollments: &quot; + e.getMessage());</span>
+<span class="nc" id="L128">        }</span>
+<span class="nc" id="L129">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
